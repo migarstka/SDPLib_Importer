@@ -1,7 +1,7 @@
 # Helper Script that reads in the problems in the SDPA sparese file format and recreates and
-# stores the problem data as matrices in Julia compatible JLD format
+# stores the problem data as matrices in Julia compatible JLD2 format
 
-# The following is stored in the JLD file:
+# The following is stored in the JLD2 file:
 # m: dimension of x
 # n: dimension of Fs,X
 # nblocks: number of blocks in the diagonal structure of the matrices
@@ -12,11 +12,12 @@
 
 # by Michael Garstka
 # University of Oxford, Control Group
-# January 2017
+# January 2018
+# Updated to Julia 1.0 in April 2019
 
 
-workspace()
-using JLD
+
+using FileIO, LinearAlgebra, SparseArrays
 # Specify path to .dat-s files
 dirPath = "./sdplib/"
 
@@ -27,6 +28,11 @@ for f in filter(x -> endswith(x, "dat-s"), readdir(dirPath))
     push!(fileNames,f)
 end
 
+#fileNames = ["equalG11"; "maxG11"; "maxG32"; "mcp124-1"; "mcp250-1"; "mcp500-1"; "qpG11"; "qpG51"; "thetaG11" ]
+# Andersens sparse SDP test problems
+fileNames = ["maxG51"; "maxG55"; "maxG60"; "mcp500-2"; "mcp500-3"; "mcp500-4"; "thetaG51"]# "equalG11" ]
+
+#fileNames = ["qpG11"]
 for file in fileNames
   # open file and read everything into memory
   f = open(dirPath*file*".dat-s");
@@ -57,7 +63,7 @@ for file in fileNames
       if counter == 1
         m = parse(Int64,strip(ln)) + 1
         # now that m is known, initalize the array that holds all the constraint matrices F
-        F = Array{SparseMatrixCSC}(m)
+        F = Array{SparseMatrixCSC}(undef, m)
 
       # nblocks: number of blocks in the diagonal structure of the matrices
       elseif counter == 2
@@ -66,17 +72,17 @@ for file in fileNames
       # vector of numbers that give the sizes on the individual blocks
       # negative number indicates diagonal submatrix
       elseif counter == 3
-      bvec = split(replace(strip(ln,['{','}','(',')']),"+",""))
+      bvec = split(replace(strip(ln,['{','}','(',')']),"+" =>""))
        blockvec = [parse(Float64, ss) for ss in bvec]
        n = Int(sum(abs.(blockvec)))
 
        # objective function vector c
       elseif counter == 4
         # try first to split by whitespace as delimiter (also remove certain trailing, ending characters)
-        cvec = split(replace(strip(ln,['{','}','(',')']),"+",""))
+        cvec = split(replace(strip(ln,['{','}','(',')']),"+" => ""))
         # otherwise try comma as delimiter
         if length(cvec) == 1
-          cvec = split(replace(strip(ln,['{','}','(',')']),"+",""),",")
+          cvec = split(replace(strip(ln,['{','}','(',')']),"+" => ""),",")
         end
         c = [parse(Float64, ss) for ss in cvec]
 
@@ -97,7 +103,7 @@ for file in fileNames
             F[currentM+1] = sparse(Fm)
           end
           # create new temporary matrix that is filled
-          Fm = zeros(n,n)
+          Fm = spzeros(n,n)
           currentM = matno
         end
 
@@ -119,21 +125,21 @@ for file in fileNames
     end
   end
   # after last line has reached save the last F matrix
-  F[currentM+1] = sparse(Fm)
+  F[currentM+1] = Fm
 
   # extract solution for objective value from README file
   f = open(dirPath*"README")
   lines = readlines(f)
   close(f)
   lines = lines[20:113]
-  ln = filter(s -> contains(s,file) ,lines)
+  ln = filter(s -> occursin(file, s) ,lines)
   if length(ln) == 0
     optVal = "Not provided"
   else
     str = split(ln[1])[4]
-    if contains(str,"primal")
+    if occursin("primal", str)
       optVal = Inf
-    elseif contains(str, "dual")
+    elseif occursin("dual", str)
       optVal = -Inf
     else
     optVal = parse(Float64, str)
@@ -141,6 +147,6 @@ for file in fileNames
   end
 
   # save to JLD file
-  JLD.save(dirPath*file*".jld", "m", m-1,"n",n,"nblocks",nblocks,"blockvec",blockvec,"c",c,"F",F,"optVal",optVal)
-  println("Saved problem: $(file) to "*dirPath*file*".jld, Optimal Value: $(optVal)")
+  save(dirPath*file*".jld2", "m", m-1,"n",n,"nblocks",nblocks,"blockvec",blockvec,"c",c,"F",F,"optVal",optVal)
+  println("Saved problem: $(file) to "*dirPath*file*".jld2, Optimal Value: $(optVal)")
 end
