@@ -17,6 +17,9 @@ The benchmark problems are provided in the SDPLib 1.2 (a library of semidefinite
 ### Testing
 - The following is a short test script that loads a converted problem in `.jld2` format, solves the problem using `JuMP` and the `COSMO.jl` solver:
 ```julia
+using FileIO, COSMO, SparseArrays, LinearAlgebra, Test, JuMP
+
+
 data = load("./sdplib/maxG11.jld2");
 F = data["F"]
 c = data["c"]
@@ -24,7 +27,7 @@ m = data["m"]
 n = data["n"]
 obj_true = data["optVal"]
 
-# Describe primal problem using JuMP and solve with SCS Solver
+# Describe primal problem using JuMP and solve with COSMO Solver
 model = JuMP.Model(with_optimizer(COSMO.Optimizer, verbose = true, decompose = true));
 @variable(model, x[1:m]);
 @objective(model, Min, c' * x);
