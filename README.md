@@ -11,8 +11,8 @@ The benchmark problems are provided in the SDPLib 1.2 (a library of semidefinite
 ### Installing / Using
 
 - Clone the repository to your local machine.
-- Add the original SDPLib 1.2 problem files to a folder "/sdplib" (or edit the path inside SDPLib_Importer.jl).
-- Run the `SDPLib_Importer.jl` file. (This will create .jld files inside the /sdplib/ folder.)
+- Add the original SDPLib 1.2 problem files to a folder `/sdplib` (or edit the path inside SDPLib_Importer.jl).
+- Run the `SDPLib_Importer.jl` file. (This will create .jld2 files inside the /sdplib/ folder.)
 
 ### Testing
 - The following is a short test script that loads a converted problem in `.jld2` format, solves the problem using `JuMP` and the `COSMO.jl` solver:
