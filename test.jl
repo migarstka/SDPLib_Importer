@@ -18,7 +18,7 @@
 using FileIO, COSMO, SparseArrays, LinearAlgebra, Test
 
 # import data from .jld2 file and create variables
-data = load("./sdplib/truss1.jld2");
+data = load("./sdplib/maxG11.jld2");
 F = data["F"]
 c = data["c"]
 m = data["m"]
@@ -26,13 +26,11 @@ n = data["n"]
 obj_true = data["optVal"]
 
 # Describe primal problem using JuMP and solve with SCS Solver
-# model = JuMP.Model(with_optimizer(COSMO.Optimizer, verbose = true, decompose = true));
-# @variable(model, x[1:m]);
-# @objective(model, Min, c' * x);
-# @constraint(model, con1,  Symmetric(-Matrix(F[1]) + sum(Matrix(F[k + 1]) .* x[k] for k in 1:m))  in JuMP.PSDCone());
-# # JuMP.optimize!(model);
-
-# # ws = backend(model).optimizer.model.optimizer.inner;
+model = JuMP.Model(with_optimizer(COSMO.Optimizer, verbose = true, decompose = true));
+@variable(model, x[1:m]);
+@objective(model, Min, c' * x);
+@constraint(model, con1,  Symmetric(-Matrix(F[1]) + sum(Matrix(F[k + 1]) .* x[k] for k in 1:m))  in JuMP.PSDCone());
+JuMP.optimize!(model);
 
 # solve with native interface
 

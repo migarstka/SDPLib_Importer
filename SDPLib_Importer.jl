@@ -28,11 +28,6 @@ for f in filter(x -> endswith(x, "dat-s"), readdir(dirPath))
     push!(fileNames,f)
 end
 
-#fileNames = ["equalG11"; "maxG11"; "maxG32"; "mcp124-1"; "mcp250-1"; "mcp500-1"; "qpG11"; "qpG51"; "thetaG11" ]
-# Andersens sparse SDP test problems
-fileNames = ["maxG51"; "maxG55"; "maxG60"; "mcp500-2"; "mcp500-3"; "mcp500-4"; "thetaG51"]# "equalG11" ]
-
-#fileNames = ["qpG11"]
 for file in fileNames
   # open file and read everything into memory
   f = open(dirPath*file*".dat-s");
