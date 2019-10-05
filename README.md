@@ -5,42 +5,31 @@ The benchmark problems are provided in the SDPLib 1.2 (a library of semidefinite
 
 ## Prerequisites
 
-- The code is written for Julia v0.6. 
-- You need the JLD package to handle the Julia Data Format (JLD). To get it simply type ``Pkg.add("JLD")``.
+- The code is written for Julia v1.0
+- You need the `FileIO` and `JLD2` package to handle the Julia Data Format (JLD2). To get it simply type `add ("JLD2")`.
 
 ### Installing / Using
 
 - Clone the repository to your local machine.
 - Add the original SDPLib 1.2 problem files to a folder "/sdplib" (or edit the path inside SDPLib_Importer.jl).
-- Run the SDPLib_Importer.jl file. (This will create .jld files inside the /sdplib/ folder.)
+- Run the `SDPLib_Importer.jl` file. (This will create .jld files inside the /sdplib/ folder.)
 
-### Testing 
-- The following is a short test script that loads a converted problem in .jld format, solves the problem using ConvexJL and the SCS solver, and compares the calculated objective value to the true value provided in the problem description.
+### Testing
+- The following is a short test script that loads a converted problem in `.jld2` format, solves the problem using `JuMP` and the `COSMO.jl` solver:
 ```julia
-workspace()
-using Convex, SCS, JLD
-using Base.Test
-
-# import data from .jld file and create variables
-data = JLD.load("./sdplib/truss1.jld")
+data = load("./sdplib/maxG11.jld2");
 F = data["F"]
 c = data["c"]
 m = data["m"]
 n = data["n"]
-optVal = data["optVal"]
+obj_true = data["optVal"]
 
-
-# Describe problem using ConvexJL and solve with SCS Solver
-x = Variable(m)
-X = Variable(n,n)
-problem = minimize(c'*x)
-constraint1 = sum(F[i+1]*x[i] for i=1:m) - F[1] == X
-constraint2 = isposdef(X)
-problem.constraints += [constraint1,constraint2]
-solve!(problem,SCSSolver(verbose=false))
-
-# check that the objective values match
-@test norm(problem.optval - optVal) <= 1e-3
+# Describe primal problem using JuMP and solve with SCS Solver
+model = JuMP.Model(with_optimizer(COSMO.Optimizer, verbose = true, decompose = true));
+@variable(model, x[1:m]);
+@objective(model, Min, c' * x);
+@constraint(model, con1,  Symmetric(-Matrix(F[1]) + sum(Matrix(F[k + 1]) .* x[k] for k in 1:m))  in JuMP.PSDCone());
+JuMP.optimize!(model);
 ```
 
 ## Authors
